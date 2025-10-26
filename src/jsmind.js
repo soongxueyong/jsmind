@@ -429,7 +429,6 @@ export default class jsMind {
         if (dir === undefined) {
             dir = this.layout.calculate_next_child_direction(parent_node);
         }
-
         var node = this.mind.add_node(parent_node, node_id, topic, data, dir);
         if (!!node) {
             this.view.add_node(node);
@@ -484,10 +483,9 @@ export default class jsMind {
 
     /**
      * Add multiple nodes to the mind map with optimized performance.
-     * Supports standard jsMind formats: node_tree, node_array, and freemind with nested children structure.
      * @param {string | import('./jsmind.node.js').Node} parent_node - Parent node for all new nodes
-     * @param {Array<{id: string, topic: string, data?: Record<string, any>, direction?: ('left'|'center'|'right'|'-1'|'0'|'1'|number), children?: Array}>} nodes_data - Array of node data objects with same format as add_node
-     * @returns {Array<import('./jsmind.node.js').Node|null>} Array of created nodes (flattened from all levels)
+     * @param {Array<{node_id: string, topic: string, data?: Record<string, any>, direction?: ('left'|'center'|'right'|'-1'|'0'|'1'|number)}>} nodes_data - Array of node data objects
+     * @returns {Array<import('./jsmind.node.js').Node|null>} Array of created nodes
      */
     add_nodes(parent_node, nodes_data) {
         if (!this.get_editable()) {
@@ -506,107 +504,33 @@ export default class jsMind {
             return [];
         }
 
-        const expected_count = this._count_expected_nodes(nodes_data);
-        let created_nodes = nodes_data
-            .map(node_data => this._add_nodes_recursive(the_parent_node, node_data))
-            .flat()
-            .filter(n => n !== null);
+        var created_nodes = [];
 
-        const actual_count = created_nodes.length;
+        // Batch create node data without triggering UI refresh
+        for (var i = 0; i < nodes_data.length; i++) {
+            var node_data = nodes_data[i];
+            var node = this._add_node_data(
+                the_parent_node,
+                node_data.node_id,
+                node_data.topic,
+                node_data.data,
+                node_data.direction
+            );
+            created_nodes.push(node);
+        }
 
-        // Atomic operation: either all nodes succeed or cleanup all partial nodes
-        if (actual_count === expected_count) {
-            // All nodes created successfully, refresh UI
+        // Refresh UI once after all nodes are added
+        if (!!created_nodes.length) {
             this._refresh_node_ui(the_parent_node);
             this.invoke_event_handle(EventType.edit, {
                 evt: 'add_nodes',
                 data: [the_parent_node.id, nodes_data],
-                nodes: created_nodes.map(node => node.id),
+                nodes: created_nodes.filter(node => node !== null).map(node => node.id),
             });
-            return created_nodes;
-        } else {
-            // Cleanup partially created nodes to ensure atomicity
-            logger.warn(
-                `Expected ${expected_count} nodes, but only created ${actual_count}. Cleaning up...`
-            );
-            this._cleanup_partial_nodes(created_nodes);
-            return [];
-        }
-    }
-
-    /**
-     * Recursively add nodes using existing format processors.
-     * @private
-     * @param {import('./jsmind.node.js').Node} parent_node
-     * @param {object} node_data
-     * @returns {Array<import('./jsmind.node.js').Node|null>}
-     */
-    _add_nodes_recursive(parent_node, node_data) {
-        var created_nodes = [];
-
-        if (!node_data.id || !node_data.topic) {
-            logger.warn('invalid node data:', node_data);
-            return [];
-        }
-
-        // Create the node
-        var new_node = this._add_node_data(
-            parent_node,
-            node_data.id,
-            node_data.topic,
-            node_data.data || {},
-            node_data.direction
-        );
-
-        if (new_node) {
-            created_nodes.push(new_node);
-            if (Array.isArray(node_data.children)) {
-                const sub_nodes = node_data.children
-                    .map(child => this._add_nodes_recursive(new_node, child))
-                    .flat();
-                created_nodes = created_nodes.concat(sub_nodes);
-            }
         }
 
         return created_nodes;
     }
-
-    /**
-     * Count expected nodes recursively.
-     * @private
-     * @param {Array} nodes_data
-     * @returns {number}
-     */
-    _count_expected_nodes(nodes_data) {
-        if (!Array.isArray(nodes_data)) {
-            return 0;
-        }
-        return nodes_data.reduce((count, node_data) => {
-            count++; // Count current node
-            count += this._count_expected_nodes(node_data && node_data.children);
-            return count;
-        }, 0);
-    }
-
-    /**
-     * Clean up partially created nodes without triggering UI refresh for each node.
-     * @private
-     * @param {Array<import('./jsmind.node.js').Node>} created_nodes
-     */
-    _cleanup_partial_nodes(created_nodes) {
-        if (created_nodes.length === 0) return;
-        // Remove all created nodes in reverse order to avoid parent-child issues
-        // Use direct view and mind operations without triggering layout/show
-        [...created_nodes].reverse().forEach(node => {
-            if (node && !node.isroot) {
-                // Remove from view without triggering layout
-                this.view.remove_node(node);
-                // Remove from mind model without triggering layout
-                this.mind.remove_node(node);
-            }
-        });
-    }
-
     /**
      * Insert a node before target node.
      * @param {string | import('./jsmind.node.js').Node} node_before

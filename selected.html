@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>jsMind 思维导图示例</title>
+    <link type="text/css" rel="stylesheet" href="./style/jsmind.css">
+    <script src="./es6/jsmind.js"></script>
+    <script src="./es6/jsmind.draggable-node.js"></script>
+    <style>
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+        #jsmind_container {
+            flex: 3;
+            border: 1px solid #ccc;
+        }
+        .info-panel {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .info-item {
+            margin: 10px 0;
+            padding: 8px;
+            border-bottom: 1px dashed #eee;
+        }
+        .empty-tip {
+            color: #999;
+            text-align: center;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 思维导图容器 -->
+        <div id="jsmind_container"></div>
+        
+        <!-- 右侧信息面板 -->
+        <div class="info-panel" id="node_info_panel">
+            <h3>节点信息</h3>
+            <div class="empty-tip">请选择一个节点查看信息</div>
+        </div>
+    </div>
+
+    <script>
+        // console.log('方向常量:', jsMind.Direction.left); // 输出 -1
+        // console.log('事件类型:', jsMind.EventType.select); // 输出 4
+        // 初始化思维导图
+        var options = {
+            container: 'jsmind_container',
+            theme: 'greensea',
+            editable: true
+        };
+        var jm = new jsMind(options);
+
+        // 示例数据
+        var mind_data = {
+            meta: { name: "示例思维导图" },
+            format: "node_tree",
+            data: {
+                id: "root",
+                topic: "根节点",
+                children: [
+                    { id: "c1", topic: "子节点1", direction: "left" },
+                    { id: "c2", topic: "子节点2", direction: "right" }
+                ]
+            }
+        };
+        jm.show(mind_data);
+
+        // 监听节点选中事件
+        jm.add_event_listener(function(type, data) {
+            // 判断是否为选中事件
+            if (type === jsMind.event_type.select && data.evt === 'select_node')  {
+                showNodeInfo(data.node);
+            }
+        });
+
+        // 显示节点信息到右侧面板
+        function showNodeInfo(nodeId) {
+            var panel = document.getElementById('node_info_panel');
+            var node = jm.get_node(nodeId);
+            
+            if (!node) {
+                panel.innerHTML = '<h3>节点信息</h3><div class="empty-tip">节点不存在</div>';
+                return;
+            }
+
+            // 构建节点信息HTML
+            var infoHtml = `
+                <h3>节点信息</h3>
+                <div class="info-item">
+                    <strong>ID:</strong> ${node.id}
+                </div>
+                <div class="info-item">
+                    <strong>标题:</strong> ${node.topic}
+                </div>
+                <div class="info-item">
+                    <strong>是否为根节点:</strong> ${node.isroot ? '是' : '否'}
+                </div>
+                <div class="info-item">
+                    <strong>方向:</strong> ${node.direction || '默认'}
+                </div>
+                <div class="info-item">
+                    <strong>父节点:</strong> ${node.parent ? node.parent.id : '无'}
+                </div>
+                <div class="info-item">
+                    <strong>子节点数量:</strong> ${node.children ? node.children.length : 0}
+                </div>
+                <div class="info-item">
+                    <strong>是否展开:</strong> ${node.expanded ? '是' : '否'}
+                </div>
+            `;
+
+            // 如果有附加数据，显示附加数据
+            if (node.data && Object.keys(node.data).length > 0) {
+                infoHtml += '<div class="info-item"><strong>附加数据:</strong><br>';
+                for (var key in node.data) {
+                    infoHtml += `${key}: ${node.data[key]}<br>`;
+                }
+                infoHtml += '</div>';
+            }
+
+            panel.innerHTML = infoHtml;
+        }
+    </script>
+</body>
+</html>

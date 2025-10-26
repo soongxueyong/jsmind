@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>jsMind 思维导图示例</title>
+    <link type="text/css" rel="stylesheet" href="./style/jsmind.css">
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        .mindmap-container {
+            flex: 3;
+        }
+        #jsmind_container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            background: #f4f4f4;
+            border-radius: 4px;
+        }
+        .node-info-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        .controls {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        button {
+            padding: 6px 12px;
+            margin-right: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        /* 按钮状态样式：默认、禁用、激活 */
+        button:disabled {
+            background-color: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+            border: 1px solid #ccc;
+        }
+        .file-input-wrapper {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            right: 0;
+            min-width: 100%;
+            min-height: 100%;
+            font-size: 100px;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .node-info-panel {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            height: 600px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .node-info-panel h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .info-item {
+            margin: 12px 0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .link-list {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+        .link-list li {
+            margin: 5px 0;
+        }
+        .link-list a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .link-list a:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            color: #999;
+            text-align: center;
+            padding: 50px 0;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 编辑模式样式 */
+        .edit-input {
+            width: 100%;
+            padding: 6px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .edit-textarea {
+            width: 100%;
+            height: 100px;
+            padding: 6px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        /* 按钮容器样式 */
+        .button-group {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+        .btn-edit {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .btn-save {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+        }
+        .btn-edit:hover:not(:disabled), .btn-save:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>jsMind 基础示例</h1>
+        <div class="controls">
+            <button onclick="addNewNode()">添加节点</button>
+            <button onclick="changeTheme()">切换主题</button>
+            <button onclick="toggleEditMode()">切换编辑模式</button>
+            <button onclick="getSelectedNodeInfo()">获取选中节点</button>
+            <div class="file-input-wrapper">
+                <button>打开JSON文件</button>
+                <input type="file" id="jsonFileInput" accept=".json" onchange="loadJsonFile(this)" />
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="mindmap-container">
+                <div id="jsmind_container"></div>
+            </div>
+            
+            <div class="node-info-container">
+                <div class="node-info-panel" id="nodeInfoPanel">
+                    <div class="empty-state" id="emptyState">
+                        <p>请选择一个节点，然后点击"获取选中节点"按钮查看信息</p>
+                    </div>
+                    <div id="nodeInfoContent" style="display: none;"></div>
+                    <!-- 按钮组：默认显示，编辑按钮初始禁用 -->
+                    <div class="button-group" id="buttonGroup">
+                        <button class="btn-edit" id="editBtn" onclick="switchToEditMode()" disabled>编辑</button>
+                        <button class="btn-save" id="saveBtn" onclick="saveNodeChanges()" disabled>保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./es6/jsmind.js"></script>
+    <script src="./es6/jsmind.draggable-node.js"></script>
+    <script>
+        let jm = null;
+        let currentTheme = 'primary';
+        let currentNode = null; // 记录当前操作的节点
+        // 获取按钮DOM元素，避免重复查询
+        const editBtn = document.getElementById('editBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const content = document.getElementById('nodeInfoContent');
+        const emptyState = document.getElementById('emptyState');
+
+        function initJsMind() {
+            const mindData = {
+                meta: { name: '示例思维导图', author: 'jsMind', version: '1.0' },
+                format: 'node_array',
+                data: [
+                    { id: 'root', isroot: true, topic: '中心主题' },
+                    { id: 'sub1', parentid: 'root', topic: '子主题1', 'background-color': '#0066cc' },
+                    { id: 'sub11', parentid: 'sub1', topic: '子主题1-1', 'link': 'https://example.com/sub11;https://example.com/sub12;' },
+                    { id: 'sub12', parentid: 'sub1', topic: '子主题1-2', 'link': 'https://example.com/sub12' },
+                    { id: 'sub123', parentid: 'sub12', topic: '子主题1-2-3', 'link': 'https://example.com/sub123' },
+                    { id: 'sub2', parentid: 'root', topic: '子主题2' },
+                    { id: 'sub21', parentid: 'sub2', topic: '子主题2-1', 'link': 'https://example.com/sub21' },
+                    { id: 'sub22', parentid: 'sub2', topic: '子主题2-2', 'foreground-color': '#00cc66', 'link': 'https://example.com/sub22' },
+                    { id: 'sub3', parentid: 'root', topic: '子主题3', 'link': 'https://example.com/sub3' }
+                ]
+            };
+
+            const options = {
+                container: 'jsmind_container',
+                editable: true,
+                theme: currentTheme,
+                view: { draggable: true, zoom: { enabled: true } }
+            };
+
+            jm = new jsMind(options);
+            jm.show(mindData);
+            jm.add_node('sub2', 'sub23', '新增节点', { 'background-color': 'red' });
+            jm.set_node_color('sub21', 'green', '#f0f0f0');
+        }
+
+        function addNewNode() {
+            if (!jm) return;
+            const parentId = 'sub3';
+            const newNodeId = 'sub3' + Date.now().toString().slice(-4);
+            jm.add_node(parentId, newNodeId, '新节点', { 'background-color': '#cc6600' });
+        }
+
+        function changeTheme() {
+            if (!jm) return;
+            const themes = ['primary', 'warning', 'danger', 'success', 'greensea', 'wisteria'];
+            currentTheme = themes[(themes.indexOf(currentTheme) + 1) % themes.length];
+            jm.set_theme(currentTheme);
+        }
+
+        function toggleEditMode() {
+            if (!jm) return;
+            const isEditable = jm.get_editable();
+            if (isEditable) {
+                jm.disable_edit();
+                alert('已切换到只读模式');
+            } else {
+                jm.enable_edit();
+                alert('已切换到编辑模式');
+            }
+        }
+
+        // 核心优化：获取节点信息时激活编辑按钮
+        function getSelectedNodeInfo() {
+            if (!jm) {
+                alert('请先等待思维导图初始化完成');
+                return;
+            }
+            
+            currentNode = jm.get_selected_node();
+            
+            if (currentNode) {
+                // 显示节点信息，激活编辑按钮
+                emptyState.style.display = 'none';
+                content.style.display = 'block';
+                editBtn.disabled = false; // 选中节点后，编辑按钮可点击
+                saveBtn.disabled = true; // 隐藏保存按钮（预览状态）
+                
+                // 构建阅览模式的节点信息
+                let infoHtml = `
+                    <h3>节点信息</h3>                    
+                    <div class="info-item" id="topicView">
+                        <span class="info-label">主题:</span> ${currentNode.topic}
+                    </div>                    
+                `;
+                
+                // 构建链接信息（阅览模式）
+                if (currentNode.data && currentNode.data.link) {
+                    const links = currentNode.data.link.replace(/;$/, '').split(';');
+                    infoHtml += `
+                        <div class="info-item" id="linkView">
+                            <span class="info-label">链接:</span>
+                            <ul class="link-list">
+                    `;
+                    links.forEach(link => {
+                        if (link.trim()) {
+                            infoHtml += `<li><a href="${link}" target="_blank">${link}</a></li>`;
+                        }
+                    });
+                    infoHtml += `
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    infoHtml += `
+                        <div class="info-item" id="linkView">
+                            <span class="info-label">链接(多条资源以";"分割):</span> 无
+                        </div>
+                    `;
+                }
+                
+                // 颜色信息
+                if (currentNode['background-color']) {
+                    infoHtml += `
+                        <div class="info-item">
+                            <span class="info-label">背景色:</span> ${currentNode['background-color']}
+                        </div>
+                    `;
+                }
+                if (currentNode['foreground-color']) {
+                    infoHtml += `
+                        <div class="info-item">
+                            <span class="info-label">前景色:</span> ${currentNode['foreground-color']}
+                        </div>
+                    `;
+                }
+                
+                content.innerHTML = infoHtml;
+            } else {
+                // 未选中节点：显示空状态，禁用编辑按钮
+                emptyState.style.display = 'flex';
+                content.style.display = 'none';
+                editBtn.disabled = true;
+                saveBtn.style.display = 'none';
+            }
+        }
+
+        // 切换到编辑模式：禁用编辑按钮，显示并激活保存按钮
+        function switchToEditMode() {
+            if (!currentNode) return;
+            
+            // 获取当前主题和链接值
+            const currentTopic = currentNode.topic || '';
+            const currentLink = (currentNode.data && currentNode.data.link) ? currentNode.data.link : '';
+            
+            // 替换主题展示区域为输入框
+            document.getElementById('topicView').innerHTML = `
+                <span class="info-label">主题:</span>
+                <input type="text" class="edit-input" id="topicInput" value="${currentTopic}">
+            `;
+            
+            // 替换链接展示区域为多行文本域
+            document.getElementById('linkView').innerHTML = `
+                <span class="info-label">链接(多条资源以";"分割):</span>
+                <textarea class="edit-textarea" id="linkInput" placeholder="多个链接用分号分隔">${currentLink}</textarea>
+            `;
+            
+            // 编辑状态：禁用编辑按钮，显示保存按钮
+            editBtn.disabled = true;
+            saveBtn.disabled = false;
+        }
+
+        // 保存节点修改：回到预览状态，禁用编辑按钮（需重新获取节点激活）
+        function saveNodeChanges() {
+            if (!currentNode || !jm) return;
+            
+            // 获取输入框的值
+            const newTopic = document.getElementById('topicInput').value.trim();
+            const newLink = document.getElementById('linkInput').value.trim();
+            
+            // 更新节点主题
+            if (newTopic) {
+                jm.update_node(currentNode.id, newTopic);
+            }
+            
+            // 更新节点链接（数据属性）
+            if (newLink) {
+                if (!currentNode.data) {
+                    currentNode.data = {};
+                }
+                currentNode.data.link = newLink;
+            } else if (currentNode.data) {
+                delete currentNode.data.link;
+            }
+            
+            // 刷新节点显示
+           
+            
+            // 切回预览模式：重新加载节点信息，编辑按钮恢复禁用（需再次获取节点激活）
+            getSelectedNodeInfo();
+            alert('节点信息已更新');
+        }
+
+        function loadJsonFile(input) {
+            if (!jm) {
+                alert('请先等待思维导图初始化完成');
+                return;
+            }
+
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!file.name.endsWith('.json')) {
+                alert('请选择JSON格式的文件');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const mindData = JSON.parse(e.target.result);
+                    if (!mindData.format || !mindData.data) {
+                        throw new Error('JSON文件格式不正确，缺少必要字段');
+                    }
+                    jm.show(mindData);
+                    alert(`成功加载思维导图: ${mindData.meta?.name || '未知名称'}`);
+                    // 加载后重置按钮状态
+                    editBtn.disabled = true;
+                    saveBtn.style.display = 'none';
+                    emptyState.style.display = 'flex';
+                    content.style.display = 'none';
+                } catch (error) {
+                    console.error('加载JSON文件失败:', error);
+                    alert(`加载失败: ${error.message}`);
+                }
+            };
+
+            reader.onerror = function() {
+                alert('文件读取失败，请重试');
+            };
+
+            reader.readAsText(file);
+            input.value = ''; // 清空文件输入，允许重复选择同一文件
+        }
+
+        // 页面加载完成后初始化思维导图
+        window.onload = initJsMind;
+    </script>
+</body>
+</html>

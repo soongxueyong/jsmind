@@ -72,3 +72,14 @@ jsMind is mind map library built by javascript, it base on html5 canvas and svg.
 ## Maintainer
 
 -   [张志刚 - Zhigang Zhang](https://hizzgdev.github.io)
+
+
+
+# 修改
+## 1.支持超链接显示 Ok
+## 支持获取当前选中节点 Ok
+## 支持当前节点topic和link编辑 Ok
+## 2.支持超链接tooltip显示 ?
+## 4.支持获取当前选择dom节点的id，alert出来 ?
+
+

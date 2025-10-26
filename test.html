@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>使用jsmind</title>
+    <!-- 引入jsmind库 -->
+    <script src="./es6/jsmind.js"></script>
+    <script src="./es6/jsmind.draggable-node.js"></script>
+</head>
+<body>
+    <!-- 用于显示思维导图的容器 -->
+    <div id="jsmind-container" style="width: 1000px; height: 600px;"></div>
+
+    <script>
+        // 访问库中定义的常量
+        console.log('版本:', jsmind.__version__); // 输出 "0.9.0"
+        console.log('方向常量:', jsmind.Direction.left); // 输出 -1
+        console.log('事件类型:', jsmind.EventType.select); // 输出 4
+
+        // 初始化思维导图（假设库中存在核心初始化方法，示例如下）
+        const mindOptions = {
+            container: 'jsmind-container', // 容器ID
+            theme: 'default',
+            editable: true
+        };
+        const jm = new jsmind.JsMind(mindOptions); // 假设存在JsMind构造函数
+
+        // 加载数据（示例数据格式）
+        const mindData = {
+            meta: { name: '示例思维导图' },
+            data: {
+                id: 'root',
+                topic: '根节点',
+                children: [
+                    { id: 'c1', topic: '子节点1' },
+                    { id: 'c2', topic: '子节点2' }
+                ]
+            }
+        };
+        jm.show(mindData);
+    </script>
+</body>
+</html>

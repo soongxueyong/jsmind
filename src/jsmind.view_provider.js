@@ -214,7 +214,7 @@ export class ViewProvider {
         view_data.height = view_data.element.clientHeight;
     }
     /** Initialize DOM elements for all nodes. */
-    init_nodes() {
+     init_nodes() {
         var nodes = this.jm.mind.nodes;
         var doc_frag = $.d.createDocumentFragment();
         for (var nodeid in nodes) {
@@ -287,6 +287,14 @@ export class ViewProvider {
             this.render_node(d, node);
         }
         d.setAttribute('nodeid', node.id);
+        //soong
+        // 仅当 node.link 存在且为非空字符串时，才设置 nodelink 属性
+        if (node.data.link && typeof node.data.link === 'string' && node.data.link.trim() !== '') {
+            d.setAttribute('nodelink', node.data.link);
+        } else {
+            // 若 link 无效，移除可能存在的旧属性（可选，避免残留无效值）
+            d.removeAttribute('nodelink');
+        }
         d.style.visibility = 'hidden';
         this._reset_node_custom_style(d, node.data);
 

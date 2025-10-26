@@ -1,5 +1,5 @@
 import cleanup from 'rollup-plugin-cleanup';
-// import terser from '@rollup/plugin-terser';
+import terser from '@rollup/plugin-terser';
 
 export default [
     {
@@ -15,11 +15,11 @@ export default [
             cleanup({
                 comments: 'none',
             }),
-            // terser({
-            //     output: {
-            //         comments: 'all',
-            //     },
-            // }),
+            terser({
+                output: {
+                    comments: 'all',
+                },
+            }),
         ],
     },
     {
@@ -40,11 +40,11 @@ export default [
             cleanup({
                 comments: 'none',
             }),
-            // terser({
-            //     output: {
-            //         comments: 'all',
-            //     },
-            // }),
+            terser({
+                output: {
+                    comments: 'all',
+                },
+            }),
         ],
     },
     {
@@ -66,11 +66,11 @@ export default [
             cleanup({
                 comments: 'none',
             }),
-            // terser({
-            //     output: {
-            //         comments: 'all',
-            //     },
-            // }),
+            terser({
+                output: {
+                    comments: 'all',
+                },
+            }),
         ],
     },
 ];

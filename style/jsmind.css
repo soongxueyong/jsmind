@@ -92,6 +92,10 @@ jmnode.selected {
     color: #fff;
     box-shadow: 2px 2px 8px #000;
 }
+jmnode[nodelink]::after {
+    content: '🔗'; 
+    font-size: 14px;
+}
 jmnode.root {
     font-size: 24px;
 }

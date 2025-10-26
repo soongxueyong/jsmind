@@ -301,6 +301,7 @@ export const format = {
                     k == 'isroot' ||
                     k == 'direction' ||
                     k == 'expanded'
+                   
                 ) {
                     continue;
                 }
