@@ -337,6 +337,13 @@ export class ViewProvider {
         if (!!node.topic) {
             this.render_node(element, node);
         }
+        // 新增：同步更新节点的 link 相关属性（与 create_node_element 逻辑一致）
+        if (node.data.link && typeof node.data.link === 'string' && node.data.link.trim() !== '') {
+            element.setAttribute('nodelink', node.data.link); // 存在有效链接时，添加/更新 nodelink 属性
+        } else {
+            element.removeAttribute('nodelink'); // 无有效链接时，移除 nodelink 属性
+        }
+
         if (this.layout.is_visible(node)) {
             view_data.width = element.clientWidth;
             view_data.height = element.clientHeight;
